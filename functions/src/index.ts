@@ -6,5 +6,6 @@ export { updateUser } from "./modules/user/update";
 export { createMatch } from "./modules/match/create";
 export { joinMatch } from "./modules/match/join";
 export { readyForMatch } from "./modules/match/ready";
+export { generateBoard } from "./modules/match/generateBoard";
 
 admin.initializeApp();

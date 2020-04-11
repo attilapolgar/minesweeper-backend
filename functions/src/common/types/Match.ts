@@ -23,8 +23,11 @@ export type Match = {
   playerIds: string[];
   players: MatchPlayer[];
   id?: string;
-  owner: string;
   status: MatchStatus;
-  createdAt: admin.firestore.FieldValue;
   noPlayers: number;
+  boardSize: number;
+  numberOfMines: number;
+  activePlayer: string | null;
+  createdAt?: admin.firestore.FieldValue;
+  createdBy: string;
 };

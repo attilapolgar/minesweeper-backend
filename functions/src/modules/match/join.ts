@@ -1,4 +1,4 @@
-import { MatchPlayer } from "./../../common/types/Match";
+import { MatchPlayer, Match } from "./../../common/types/Match";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
@@ -25,7 +25,7 @@ export const joinMatch = functions.https.onCall(
         );
       }
 
-      const match = snapshot.data();
+      const match = snapshot.data() as Match;
 
       if (!match) {
         throw new functions.https.HttpsError(
@@ -51,22 +51,25 @@ export const joinMatch = functions.https.onCall(
         );
       }
 
+      const playerIds = match.playerIds.concat([uid]);
+      const players = match.players.concat([
+        {
+          userId: uid,
+          score: 0,
+          color: "red",
+          status: MatchPlayerStatus.JOINED,
+        },
+      ]);
+      const status =
+        playerIds.length === match.noPlayers
+          ? MatchStatus.READY_TO_START
+          : MatchStatus.WAITING;
+
       const update: {
         players: MatchPlayer[];
         playerIds: string[];
         status: MatchStatus;
-      } = {
-        players: match.players.concat([
-          {
-            userId: uid,
-            score: 0,
-            color: "red",
-            status: MatchPlayerStatus.JOINED,
-          },
-        ]),
-        playerIds: match.playerIds.concat([uid]),
-        status: MatchStatus.READY_TO_START,
-      };
+      } = { players, playerIds, status };
 
       return snapshot.ref.update(update);
     }

@@ -27,12 +27,16 @@ export const createMatch = functions.https.onCall(async (data, context) => {
             status: MatchPlayerStatus.JOINED,
           },
         ],
+        boardSize: 16,
         playerIds: [uid],
-        owner: uid,
-        status: MatchStatus.WAITING,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
         noPlayers: 2,
+        numberOfMines: 51,
+        status: MatchStatus.WAITING,
+        activePlayer: null,
+        createdBy: uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
+
       await admin.firestore().collection(Collections.MATCHES).add(match);
 
       return true;
