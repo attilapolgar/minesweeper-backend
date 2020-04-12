@@ -30,4 +30,5 @@ export type Match = {
   activePlayer: string | null;
   createdAt?: admin.firestore.FieldValue;
   createdBy: string;
+  view: string;
 };

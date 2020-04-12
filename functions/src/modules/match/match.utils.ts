@@ -1,9 +1,9 @@
+import { FieldCodeTable } from "./../../common/types/Board";
 import { Field, Board } from "../../common/types/Board";
 import { Match } from "../../common/types/Match";
 
 export function generateBoardForMatch(match: Match): Board {
   return {
-    size: match.boardSize,
     fields: generateFields(match.boardSize, 51),
   };
 }
@@ -24,7 +24,7 @@ export function generateFields(
     }
   }
 
-  return generateAdjacents(emptyFields, boardSize);
+  return generateAdjacents(emptyFields);
 }
 
 export function generateEmptyFields(numberOfFields: number) {
@@ -41,7 +41,7 @@ export function generateEmptyFields(numberOfFields: number) {
     }));
 }
 
-export function generateAdjacents(fields: Field[], size: number): Field[] {
+export function generateAdjacents(fields: Field[]): Field[] {
   return fields.map((field, i) => ({
     ...field,
     number: getNumberOfAdjacentMines(fields, i),
@@ -60,7 +60,7 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
 }
 
 export function getAdjacentFields(fields: Field[], index: number): Field[] {
-  const res = [
+  return [
     getUpperLeftField(fields, index),
     getUpperField(fields, index),
     getUpperRightField(fields, index),
@@ -69,9 +69,7 @@ export function getAdjacentFields(fields: Field[], index: number): Field[] {
     getLowerLeftField(fields, index),
     getLowerField(fields, index),
     getLowerRightField(fields, index),
-  ];
-
-  return res.filter(notEmpty);
+  ].filter(notEmpty);
 }
 
 export function getUpperField(fields: Field[], index: number): Field | null {
@@ -146,4 +144,23 @@ export function getRightField(fields: Field[], index: number): Field | null {
     return null;
   }
   return fields[index + 1];
+}
+
+export function generatePublicBoardView(board: Board): string {
+  return board.fields
+    .map((field) => {
+      if (!field.revealed) {
+        return FieldCodeTable.UNREVEALED;
+      }
+      if (!field.mine) {
+        return field.number;
+      }
+
+      if (field.mine) {
+        return FieldCodeTable.MINE;
+      }
+
+      return "";
+    })
+    .join(FieldCodeTable.SEPARATOR);
 }

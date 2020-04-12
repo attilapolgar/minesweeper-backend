@@ -17,30 +17,31 @@ export const createMatch = functions.https.onCall(async (data, context) => {
         "failed-precondition",
         "The function must be called " + "while authenticated."
       );
-    } else {
-      const match: Match = {
-        players: [
-          {
-            userId: uid,
-            score: 0,
-            color: "blue",
-            status: MatchPlayerStatus.JOINED,
-          },
-        ],
-        boardSize: 16,
-        playerIds: [uid],
-        noPlayers: 2,
-        numberOfMines: 51,
-        status: MatchStatus.WAITING,
-        activePlayer: null,
-        createdBy: uid,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
-
-      await admin.firestore().collection(Collections.MATCHES).add(match);
-
-      return true;
     }
+
+    const match: Match = {
+      players: [
+        {
+          userId: uid,
+          score: 0,
+          color: "blue",
+          status: MatchPlayerStatus.JOINED,
+        },
+      ],
+      boardSize: 16,
+      playerIds: [uid],
+      noPlayers: 2,
+      numberOfMines: 51,
+      status: MatchStatus.WAITING,
+      activePlayer: null,
+      view: "",
+      createdBy: uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    await admin.firestore().collection(Collections.MATCHES).add(match);
+
+    return true;
   } catch (error) {
     console.log("error", error);
     return false;

@@ -12,8 +12,10 @@ import {
   getLowerLeftField,
   getLowerField,
   getLowerRightField,
+  generatePublicBoardView,
 } from "./match.utils";
 import { Match } from "../../common/types/Match";
+import { Board } from "../../common/types/Board";
 
 const mockedMatch: Match = {
   boardSize: 16,
@@ -24,6 +26,7 @@ const mockedMatch: Match = {
   playerIds: ["p1", "p2"],
   status: MatchStatus.STARTED,
   players: [],
+  view: "",
 };
 
 /*
@@ -38,23 +41,27 @@ const mockedMatch: Match = {
     [2][3][4][5]
 */
 const mockedFields4x4 = [
-  { mine: true, index: 0 },
-  { mine: false, index: 1 },
-  { mine: false, index: 2 },
-  { mine: false, index: 3 },
-  { mine: false, index: 4 },
-  { mine: false, index: 5 },
-  { mine: false, index: 6 },
-  { mine: false, index: 7 },
-  { mine: false, index: 8 },
-  { mine: true, index: 9 },
-  { mine: false, index: 10 },
-  { mine: true, index: 11 },
-  { mine: false, index: 12 },
-  { mine: false, index: 13 },
-  { mine: false, index: 14 },
-  { mine: false, index: 15 },
+  { number: null, revealed: false, mine: true, index: 0 },
+  { number: null, revealed: true, mine: false, index: 1 },
+  { number: null, revealed: true, mine: false, index: 2 },
+  { number: null, revealed: true, mine: false, index: 3 },
+  { number: null, revealed: false, mine: false, index: 4 },
+  { number: null, revealed: true, mine: false, index: 5 },
+  { number: null, revealed: true, mine: false, index: 6 },
+  { number: null, revealed: true, mine: false, index: 7 },
+  { number: null, revealed: false, mine: false, index: 8 },
+  { number: null, revealed: true, mine: true, index: 9 },
+  { number: null, revealed: false, mine: false, index: 10 },
+  { number: null, revealed: false, mine: true, index: 11 },
+  { number: null, revealed: false, mine: false, index: 12 },
+  { number: null, revealed: false, mine: false, index: 13 },
+  { number: null, revealed: false, mine: false, index: 14 },
+  { number: null, revealed: false, mine: false, index: 15 },
 ];
+
+const mockedBoard4x4: Board = {
+  fields: generateAdjacents(mockedFields4x4),
+};
 
 describe("generateFields", () => {
   it("should return with a board", () => {
@@ -68,29 +75,29 @@ describe("generateFields", () => {
 
 describe("generateAdjacents", () => {
   it("should calculated the number of adjacent mines", () => {
-    const result = generateAdjacents(mockedFields4x4, 2);
+    const result = generateAdjacents(mockedFields4x4);
 
     /*
     [x][1]
     [1][1]
     */
     const expectedResult = [
-      { mine: true, number: 0, index: 0 },
-      { mine: false, number: 1, index: 1 },
-      { mine: false, number: 0, index: 2 },
-      { mine: false, number: 0, index: 3 },
-      { mine: false, number: 2, index: 4 },
-      { mine: false, number: 2, index: 5 },
-      { mine: false, number: 2, index: 6 },
-      { mine: false, number: 1, index: 7 },
-      { mine: false, number: 1, index: 8 },
-      { mine: true, number: 0, index: 9 },
-      { mine: false, number: 2, index: 10 },
-      { mine: true, number: 0, index: 11 },
-      { mine: false, number: 1, index: 12 },
-      { mine: false, number: 1, index: 13 },
-      { mine: false, number: 2, index: 14 },
-      { mine: false, number: 1, index: 15 },
+      { revealed: false, mine: true, number: 0, index: 0 },
+      { revealed: true, mine: false, number: 1, index: 1 },
+      { revealed: true, mine: false, number: 0, index: 2 },
+      { revealed: true, mine: false, number: 0, index: 3 },
+      { revealed: false, mine: false, number: 2, index: 4 },
+      { revealed: true, mine: false, number: 2, index: 5 },
+      { revealed: true, mine: false, number: 2, index: 6 },
+      { revealed: true, mine: false, number: 1, index: 7 },
+      { revealed: false, mine: false, number: 1, index: 8 },
+      { revealed: true, mine: true, number: 0, index: 9 },
+      { revealed: false, mine: false, number: 2, index: 10 },
+      { revealed: false, mine: true, number: 0, index: 11 },
+      { revealed: false, mine: false, number: 1, index: 12 },
+      { revealed: false, mine: false, number: 1, index: 13 },
+      { revealed: false, mine: false, number: 2, index: 14 },
+      { revealed: false, mine: false, number: 1, index: 15 },
     ];
 
     expect(result).toEqual(expectedResult);
@@ -311,5 +318,13 @@ describe("getLowerRightField", () => {
     expect(getLowerRightField(mockedFields4x4, 13)).toBeNull();
     expect(getLowerRightField(mockedFields4x4, 14)).toBeNull();
     expect(getLowerRightField(mockedFields4x4, 15)).toBeNull();
+  });
+});
+
+describe("generatePublicBoardView", () => {
+  it("should return with the encoded view", () => {
+    const result = generatePublicBoardView(mockedBoard4x4);
+
+    expect(result).toEqual("_;1;0;0;_;2;2;1;_;X;_;_;_;_;_;_");
   });
 });
