@@ -29,6 +29,6 @@ export type Match = {
   numberOfMines: number;
   activePlayer: string | null;
   createdAt?: admin.firestore.FieldValue;
-  createdBy: string;
+  createdBy?: string;
   view: string;
 };

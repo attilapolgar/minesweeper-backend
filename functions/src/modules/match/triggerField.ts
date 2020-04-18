@@ -1,14 +1,16 @@
+import { MatchPlayer } from "./../../common/types/Match";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { Collections } from "../../common/collections";
 import { Board, Field } from "../../common/types/Board";
 import { Match } from "../../common/types/Match";
 import { generatePublicBoardView, getAdjacentFields } from "./match.utils";
+import { functionsWithRegion } from "../../common/firebase";
 
-let cachedMatches: { [key: string]: Match } = {};
-let cachedBoards: { [key: string]: Board } = {};
+const cachedMatches: { [key: string]: Match } = {};
+const cachedBoards: { [key: string]: Board } = {};
 
-export const triggerField = functions.https.onCall(
+export const triggerField = functionsWithRegion.https.onCall(
   async (data: { fieldIndex: number; matchId: string }, context) => {
     const uid = context.auth?.uid;
 
@@ -20,7 +22,12 @@ export const triggerField = functions.https.onCall(
     }
 
     const match = await getMatch(data.matchId);
-    let board = await getBoard(data.matchId);
+    const matchUpdates: {
+      view?: string;
+      activePlayer?: string | null;
+      players?: MatchPlayer[];
+    } = {};
+    const board = await getBoard(data.matchId);
 
     if (!match.playerIds.includes(uid)) {
       throw new functions.https.HttpsError(
@@ -30,73 +37,113 @@ export const triggerField = functions.https.onCall(
       );
     }
 
-    board = triggerF(cachedBoards[data.matchId], data.fieldIndex);
+    const activePlayer = match.players.find(
+      (player) => player.userId === match.activePlayer
+    );
 
-    const publicBoardView = generatePublicBoardView(board);
+    if (!activePlayer) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "No active player",
+        data.matchId
+      );
+    }
 
-    match.view = publicBoardView;
+    const { endTurn, board: _board, score } = triggerF(
+      board,
+      data.fieldIndex,
+      activePlayer.color
+    );
+
+    const publicBoardView = generatePublicBoardView(_board);
+
+    matchUpdates.view = publicBoardView;
+
+    if (endTurn) {
+      matchUpdates.activePlayer = match.playerIds.filter(
+        (playerId) => playerId !== match.activePlayer
+      )[0];
+    }
+
+    if (score) {
+      matchUpdates.players = match.players.map((player) => {
+        if (player.userId === match.activePlayer) {
+          return { ...player, score: player.score + score };
+        }
+
+        return player;
+      });
+    }
 
     admin
       .firestore()
       .collection(Collections.BOARDS)
       .doc(data.matchId)
-      .set(board)
+      .set(_board)
       .catch((err) => {
         console.log("err", err);
       });
-    cachedBoards[data.matchId] = board;
+    cachedBoards[data.matchId] = _board;
 
     admin
       .firestore()
       .collection(Collections.MATCHES)
       .doc(data.matchId)
-      .update({
-        view: publicBoardView,
-      })
+      .update(matchUpdates)
       .catch((err) => {
         console.log("err", err);
       });
-    cachedMatches[data.matchId] = match;
+    cachedMatches[data.matchId] = { ...match, ...matchUpdates };
 
-    return publicBoardView;
+    return matchUpdates;
   }
 );
 
-function triggerF(board: Board, index: number): Board {
-  let fields = [...board.fields];
+function triggerF(
+  board: Board,
+  index: number,
+  color: string
+): { endTurn: boolean; board: Board; score: number } {
+  const { endTurn, fields, score } = revealField(board.fields, index, color);
 
-  fields = revealField(fields, index);
-
-  return { ...board, fields };
+  return { endTurn, board: { ...board, fields }, score };
 }
 
-function revealField(fields: Field[], index: number): Field[] {
-  let ffields = [...fields];
-  if (ffields[index].revealed) {
-    return ffields;
+function revealField(
+  fields: Field[],
+  index: number,
+  color: string
+): { endTurn: boolean; fields: Field[]; score: number } {
+  let _fields = [...fields];
+  if (_fields[index].revealed) {
+    return { endTurn: false, score: 0, fields: _fields };
   }
 
-  if (ffields[index].mine) {
-    ffields[index].revealed = true;
-    return ffields;
+  if (_fields[index].mine) {
+    _fields[index].revealed = true;
+    _fields[index].color = color;
+    return { endTurn: false, score: 1, fields: _fields };
   }
 
-  if (ffields[index].number !== 0) {
-    ffields[index].revealed = true;
-    return ffields;
+  if (_fields[index].number !== 0) {
+    _fields[index].revealed = true;
+    _fields[index].color = color;
+    return { endTurn: true, score: 0, fields: _fields };
   }
 
-  if (ffields[index].number === 0) {
-    ffields[index].revealed = true;
-    const adjacents = getAdjacentFields(ffields, index);
+  if (_fields[index].number === 0) {
+    _fields[index].revealed = true;
+    _fields[index].color = color;
+    const adjacents = getAdjacentFields(_fields, index);
     adjacents.forEach((field) => {
-      ffields = revealField(ffields, field.index);
+      const { fields: newFields } = revealField(_fields, field.index, color);
+      _fields = newFields;
     });
 
-    return ffields;
+    return { endTurn: true, score: 0, fields: _fields };
   }
 
-  return ffields;
+  return { endTurn: false, score: 0, fields: _fields };
 }
 
 async function getMatch(matchId: string): Promise<Match> {

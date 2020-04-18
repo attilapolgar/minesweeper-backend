@@ -1,6 +1,11 @@
 import { FieldCodeTable } from "./../../common/types/Board";
 import { Field, Board } from "../../common/types/Board";
-import { Match } from "../../common/types/Match";
+import {
+  Match,
+  MatchStatus,
+  MatchPlayerStatus,
+} from "../../common/types/Match";
+import { sample } from "../../common/utils";
 
 export function generateBoardForMatch(match: Match): Board {
   return {
@@ -35,7 +40,6 @@ export function generateEmptyFields(numberOfFields: number) {
       revealed: false,
       mine: false,
       number: 0,
-      found: false,
       color: null,
       index: i,
     }));
@@ -157,10 +161,85 @@ export function generatePublicBoardView(board: Board): string {
       }
 
       if (field.mine) {
-        return FieldCodeTable.MINE;
+        return `${FieldCodeTable.MINE}:${field.color}`;
       }
 
       return "";
     })
     .join(FieldCodeTable.SEPARATOR);
+}
+
+export function createNewMatch({
+  boardSize = 16,
+  noPlayers = 2,
+  numberOfMines = 51,
+}: {
+  boardSize?: number;
+  noPlayers?: number;
+  numberOfMines?: 51;
+} = {}): Match {
+  return {
+    players: [],
+    playerIds: [],
+    boardSize: boardSize,
+    noPlayers: noPlayers,
+    numberOfMines: numberOfMines,
+    status: MatchStatus.WAITING,
+    activePlayer: null,
+    view: "",
+  };
+}
+
+const matchColors = ["blue", "red"];
+
+export function joinPlayer(uid: string, match: Match): Match {
+  if (match.noPlayers === match.playerIds.length + 1) {
+    throw new Error("match is already full");
+  }
+  if (match.playerIds.includes(uid)) {
+    throw new Error("Already in game");
+  }
+
+  const playerIds = match.playerIds.concat([uid]);
+  const players = match.players.concat({
+    userId: uid,
+    score: 0,
+    color: matchColors[match.playerIds.length],
+    status: MatchPlayerStatus.JOINED,
+  });
+  const status =
+    playerIds.length === match.noPlayers
+      ? MatchStatus.READY_TO_START
+      : MatchStatus.WAITING;
+
+  return {
+    ...match,
+    players,
+    playerIds,
+    status,
+  };
+}
+
+export function playerIsReady(uid: string, match: Match) {
+  if (!match.playerIds.includes(uid)) {
+    throw new Error("Player is not in game");
+  }
+
+  const players = match.players.map((player) => {
+    if (player.userId === uid) {
+      return {
+        ...player,
+        status: MatchPlayerStatus.READY,
+      };
+    }
+    return player;
+  });
+
+  const started =
+    players.filter((player) => player.status === MatchPlayerStatus.READY)
+      .length === match.noPlayers;
+  const status = started ? MatchStatus.STARTED : MatchStatus.READY_TO_START;
+  const activePlayer = started ? sample(match.playerIds) : null;
+
+  return { ...match, status, activePlayer, players };
 }

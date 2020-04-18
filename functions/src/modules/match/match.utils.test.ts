@@ -41,22 +41,22 @@ const mockedMatch: Match = {
     [2][3][4][5]
 */
 const mockedFields4x4 = [
-  { number: null, revealed: false, mine: true, index: 0 },
-  { number: null, revealed: true, mine: false, index: 1 },
-  { number: null, revealed: true, mine: false, index: 2 },
-  { number: null, revealed: true, mine: false, index: 3 },
-  { number: null, revealed: false, mine: false, index: 4 },
-  { number: null, revealed: true, mine: false, index: 5 },
-  { number: null, revealed: true, mine: false, index: 6 },
-  { number: null, revealed: true, mine: false, index: 7 },
-  { number: null, revealed: false, mine: false, index: 8 },
-  { number: null, revealed: true, mine: true, index: 9 },
-  { number: null, revealed: false, mine: false, index: 10 },
-  { number: null, revealed: false, mine: true, index: 11 },
-  { number: null, revealed: false, mine: false, index: 12 },
-  { number: null, revealed: false, mine: false, index: 13 },
-  { number: null, revealed: false, mine: false, index: 14 },
-  { number: null, revealed: false, mine: false, index: 15 },
+  { color: "red", number: null, revealed: false, mine: true, index: 0 },
+  { color: "red", number: null, revealed: true, mine: false, index: 1 },
+  { color: "red", number: null, revealed: true, mine: false, index: 2 },
+  { color: "red", number: null, revealed: true, mine: false, index: 3 },
+  { color: "red", number: null, revealed: false, mine: false, index: 4 },
+  { color: "red", number: null, revealed: true, mine: false, index: 5 },
+  { color: "red", number: null, revealed: true, mine: false, index: 6 },
+  { color: "red", number: null, revealed: true, mine: false, index: 7 },
+  { color: "red", number: null, revealed: false, mine: false, index: 8 },
+  { color: "red", number: null, revealed: true, mine: true, index: 9 },
+  { color: "red", number: null, revealed: false, mine: false, index: 10 },
+  { color: "red", number: null, revealed: false, mine: true, index: 11 },
+  { color: "red", number: null, revealed: false, mine: false, index: 12 },
+  { color: "red", number: null, revealed: false, mine: false, index: 13 },
+  { color: "red", number: null, revealed: false, mine: false, index: 14 },
+  { color: "red", number: null, revealed: false, mine: false, index: 15 },
 ];
 
 const mockedBoard4x4: Board = {
@@ -82,22 +82,22 @@ describe("generateAdjacents", () => {
     [1][1]
     */
     const expectedResult = [
-      { revealed: false, mine: true, number: 0, index: 0 },
-      { revealed: true, mine: false, number: 1, index: 1 },
-      { revealed: true, mine: false, number: 0, index: 2 },
-      { revealed: true, mine: false, number: 0, index: 3 },
-      { revealed: false, mine: false, number: 2, index: 4 },
-      { revealed: true, mine: false, number: 2, index: 5 },
-      { revealed: true, mine: false, number: 2, index: 6 },
-      { revealed: true, mine: false, number: 1, index: 7 },
-      { revealed: false, mine: false, number: 1, index: 8 },
-      { revealed: true, mine: true, number: 0, index: 9 },
-      { revealed: false, mine: false, number: 2, index: 10 },
-      { revealed: false, mine: true, number: 0, index: 11 },
-      { revealed: false, mine: false, number: 1, index: 12 },
-      { revealed: false, mine: false, number: 1, index: 13 },
-      { revealed: false, mine: false, number: 2, index: 14 },
-      { revealed: false, mine: false, number: 1, index: 15 },
+      { color: "red", revealed: false, mine: true, number: 0, index: 0 },
+      { color: "red", revealed: true, mine: false, number: 1, index: 1 },
+      { color: "red", revealed: true, mine: false, number: 0, index: 2 },
+      { color: "red", revealed: true, mine: false, number: 0, index: 3 },
+      { color: "red", revealed: false, mine: false, number: 2, index: 4 },
+      { color: "red", revealed: true, mine: false, number: 2, index: 5 },
+      { color: "red", revealed: true, mine: false, number: 2, index: 6 },
+      { color: "red", revealed: true, mine: false, number: 1, index: 7 },
+      { color: "red", revealed: false, mine: false, number: 1, index: 8 },
+      { color: "red", revealed: true, mine: true, number: 0, index: 9 },
+      { color: "red", revealed: false, mine: false, number: 2, index: 10 },
+      { color: "red", revealed: false, mine: true, number: 0, index: 11 },
+      { color: "red", revealed: false, mine: false, number: 1, index: 12 },
+      { color: "red", revealed: false, mine: false, number: 1, index: 13 },
+      { color: "red", revealed: false, mine: false, number: 2, index: 14 },
+      { color: "red", revealed: false, mine: false, number: 1, index: 15 },
     ];
 
     expect(result).toEqual(expectedResult);
@@ -325,6 +325,6 @@ describe("generatePublicBoardView", () => {
   it("should return with the encoded view", () => {
     const result = generatePublicBoardView(mockedBoard4x4);
 
-    expect(result).toEqual("_;1;0;0;_;2;2;1;_;X;_;_;_;_;_;_");
+    expect(result).toEqual("_;1;0;0;_;2;2;1;_;X:red;_;_;_;_;_;_");
   });
 });

@@ -1,11 +1,12 @@
-import { MatchPlayer, Match } from "./../../common/types/Match";
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
 
 import { Collections } from "../../common/collections";
-import { MatchStatus, MatchPlayerStatus } from "../../common/types/Match";
+import { functionsWithRegion } from "../../common/firebase";
+import { Match, MatchPlayer, MatchStatus } from "../../common/types/Match";
+import { joinPlayer } from "./match.utils";
 
-export const joinMatch = functions.https.onCall(
+export const joinMatch = functionsWithRegion.https.onCall(
   async (data: { matchId: string }, context) => {
     const uid = context.auth?.uid;
 
@@ -14,56 +15,31 @@ export const joinMatch = functions.https.onCall(
         "failed-precondition",
         "The function must be called " + "while authenticated."
       );
-    } else {
-      const matches = admin.firestore().collection(Collections.MATCHES);
-      const snapshot = await matches.doc(data.matchId).get();
-      if (!snapshot.exists) {
-        throw new functions.https.HttpsError(
-          "not-found",
-          "Match doesn't exist",
-          data.matchId
-        );
-      }
+    }
 
-      const match = snapshot.data() as Match;
+    const matches = admin.firestore().collection(Collections.MATCHES);
+    const snapshot = await matches.doc(data.matchId).get();
 
-      if (!match) {
-        throw new functions.https.HttpsError(
-          "not-found",
-          "Match doesn't exist",
-          data.matchId
-        );
-      }
+    if (!snapshot.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Match doesn't exist",
+        data.matchId
+      );
+    }
 
-      if (match.playerIds.includes(uid)) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "Already in game",
-          data.matchId
-        );
-      }
+    const match = snapshot.data() as Match;
 
-      if (match.playerIds.length >= match.noPlayers) {
-        throw new functions.https.HttpsError(
-          "failed-precondition",
-          "Game is full",
-          data.matchId
-        );
-      }
+    if (!match) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Match doesn't exist",
+        data.matchId
+      );
+    }
 
-      const playerIds = match.playerIds.concat([uid]);
-      const players = match.players.concat([
-        {
-          userId: uid,
-          score: 0,
-          color: "red",
-          status: MatchPlayerStatus.JOINED,
-        },
-      ]);
-      const status =
-        playerIds.length === match.noPlayers
-          ? MatchStatus.READY_TO_START
-          : MatchStatus.WAITING;
+    try {
+      const { players, playerIds, status } = joinPlayer(uid, match);
 
       const update: {
         players: MatchPlayer[];
@@ -71,7 +47,10 @@ export const joinMatch = functions.https.onCall(
         status: MatchStatus;
       } = { players, playerIds, status };
 
-      return snapshot.ref.update(update);
+      await snapshot.ref.update(update);
+      return update;
+    } catch (error) {
+      throw new functions.https.HttpsError("aborted", error);
     }
   }
 );

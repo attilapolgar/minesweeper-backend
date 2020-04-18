@@ -9,6 +9,7 @@ export type Field = {
   index: number;
   revealed: boolean;
   number: number | null;
+  color: string | null;
 };
 
 export type Board = {

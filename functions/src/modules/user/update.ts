@@ -2,8 +2,9 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 import { Collections } from "../../common/collections";
+import { functionsWithRegion } from "../../common/firebase";
 
-export const updateUser = functions.https.onCall((data, context) => {
+export const updateUser = functionsWithRegion.https.onCall((data, context) => {
   const uid = context.auth?.uid;
 
   if (!uid) {

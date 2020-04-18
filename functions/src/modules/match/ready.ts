@@ -1,16 +1,11 @@
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-
+import * as functions from "firebase-functions";
 import { Collections } from "../../common/collections";
-import {
-  MatchPlayer,
-  MatchPlayerStatus,
-  Match,
-  MatchStatus,
-} from "../../common/types/Match";
-import { sample } from "../../common/utils";
+import { functionsWithRegion } from "../../common/firebase";
+import { Match, MatchPlayer, MatchStatus } from "../../common/types/Match";
+import { playerIsReady } from "./match.utils";
 
-export const readyForMatch = functions.https.onCall(
+export const readyForMatch = functionsWithRegion.https.onCall(
   async (data: { matchId: string }, context) => {
     const uid = context.auth?.uid;
 
@@ -42,42 +37,23 @@ export const readyForMatch = functions.https.onCall(
       );
     }
 
-    if (!match.playerIds.includes(uid)) {
-      throw new functions.https.HttpsError(
-        "failed-precondition",
-        "Not in game",
-        data.matchId
-      );
+    try {
+      const { players, status, activePlayer } = playerIsReady(uid, match);
+
+      const update: {
+        players: MatchPlayer[];
+        status: MatchStatus;
+        activePlayer: string | null;
+      } = {
+        players,
+        status,
+        activePlayer,
+      };
+
+      await snapshot.ref.update(update);
+      return update;
+    } catch (error) {
+      throw new functions.https.HttpsError("aborted", error);
     }
-
-    const players = match.players.map((player: MatchPlayer) => {
-      if (player.userId === uid) {
-        return {
-          ...player,
-          status: MatchPlayerStatus.READY,
-        };
-      }
-      return player;
-    });
-
-    const started =
-      players.filter((player) => player.status === MatchPlayerStatus.READY)
-        .length === match.noPlayers;
-
-    const status = started ? MatchStatus.STARTED : MatchStatus.READY_TO_START;
-
-    const activePlayer = started ? sample(match.playerIds) : null;
-
-    const update: {
-      players: MatchPlayer[];
-      status: MatchStatus;
-      activePlayer: string | null;
-    } = {
-      players,
-      status,
-      activePlayer,
-    };
-
-    return snapshot.ref.update(update);
   }
 );
