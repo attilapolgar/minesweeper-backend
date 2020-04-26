@@ -27,6 +27,7 @@ const mockedMatch: Match = {
   status: MatchStatus.STARTED,
   players: [],
   view: "",
+  winner: null,
 };
 
 /*

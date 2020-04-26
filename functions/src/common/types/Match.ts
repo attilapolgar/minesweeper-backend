@@ -24,6 +24,7 @@ export type Match = {
   players: MatchPlayer[];
   id?: string;
   status: MatchStatus;
+  winner: string | null;
   noPlayers: number;
   boardSize: number;
   numberOfMines: number;

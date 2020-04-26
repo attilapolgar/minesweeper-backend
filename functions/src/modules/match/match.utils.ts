@@ -187,13 +187,14 @@ export function createNewMatch({
     status: MatchStatus.WAITING,
     activePlayer: null,
     view: "",
+    winner: null,
   };
 }
 
 const matchColors = ["blue", "red"];
 
 export function joinPlayer(uid: string, match: Match): Match {
-  if (match.noPlayers === match.playerIds.length + 1) {
+  if (match.noPlayers === match.playerIds.length) {
     throw new Error("match is already full");
   }
   if (match.playerIds.includes(uid)) {

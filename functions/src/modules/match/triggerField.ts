@@ -1,11 +1,11 @@
-import { MatchPlayer } from "./../../common/types/Match";
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
 import { Collections } from "../../common/collections";
+import { functionsWithRegion } from "../../common/firebase";
 import { Board, Field } from "../../common/types/Board";
 import { Match } from "../../common/types/Match";
+import { MatchPlayer, MatchStatus } from "./../../common/types/Match";
 import { generatePublicBoardView, getAdjacentFields } from "./match.utils";
-import { functionsWithRegion } from "../../common/firebase";
 
 const cachedMatches: { [key: string]: Match } = {};
 const cachedBoards: { [key: string]: Board } = {};
@@ -26,6 +26,8 @@ export const triggerField = functionsWithRegion.https.onCall(
       view?: string;
       activePlayer?: string | null;
       players?: MatchPlayer[];
+      status?: MatchStatus;
+      winner?: string;
     } = {};
     const board = await getBoard(data.matchId);
 
@@ -45,6 +47,14 @@ export const triggerField = functionsWithRegion.https.onCall(
       throw new functions.https.HttpsError(
         "failed-precondition",
         "No active player",
+        data.matchId
+      );
+    }
+
+    if (match.status !== MatchStatus.STARTED) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Not ongoing match",
         data.matchId
       );
     }
@@ -73,6 +83,15 @@ export const triggerField = functionsWithRegion.https.onCall(
 
         return player;
       });
+    }
+
+    const winner = matchUpdates.players?.find(
+      // (player) => player.score >= Math.floor(match.numberOfMines / 2) + 1
+      (player) => player.score >= 5
+    );
+    if (winner) {
+      matchUpdates.status = MatchStatus.FINISHED;
+      matchUpdates.winner = winner.userId;
     }
 
     admin
@@ -147,24 +166,24 @@ function revealField(
 }
 
 async function getMatch(matchId: string): Promise<Match> {
-  if (!cachedMatches[matchId]) {
-    const matches = admin.firestore().collection(Collections.MATCHES);
-    const snapshot = await matches.doc(matchId).get();
+  // if (!cachedMatches[matchId]) {
+  const matches = admin.firestore().collection(Collections.MATCHES);
+  const snapshot = await matches.doc(matchId).get();
 
-    if (!snapshot.exists) {
-      throw new functions.https.HttpsError(
-        "not-found",
-        "Match doesn't exist",
-        matchId
-      );
-    }
-
-    const match = snapshot.data() as Match;
-    cachedMatches[matchId] = match;
-
-    return match;
+  if (!snapshot.exists) {
+    throw new functions.https.HttpsError(
+      "not-found",
+      "Match doesn't exist",
+      matchId
+    );
   }
-  return cachedMatches[matchId];
+
+  const match = snapshot.data() as Match;
+  cachedMatches[matchId] = match;
+
+  return match;
+  // }
+  // return cachedMatches[matchId];
 }
 
 async function getBoard(boardId: string): Promise<Board> {
